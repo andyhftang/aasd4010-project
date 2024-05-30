@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: news-scraper-config
+  namespace: aasd4010
+data:
+  RSS_URL: https://feeds.content.dowjones.io/public/rss/mw_topstories

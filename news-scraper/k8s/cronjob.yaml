@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: news-scraper-job
+  namespace: aasd4010
+spec:
+  schedule: "0 */2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: news-scraper
+              image: ghcr.io/andyhftang/andyhftang/aasd4010-project-news-scraper:latest
+              envFrom:
+                - secretRef:
+                    name: news-scraper-secret
+                - configMapRef:
+                    name: news-scraper-config
+          imagePullSecrets:
+            - name: ghcr-access-token
+          restartPolicy: OnFailure
