@@ -79,7 +79,13 @@ export default function Home() {
     <Grid container spacing={2} className={styles.main}>
       <Grid xs={12}>
         <Box sx={{ width: '100%', textAlign: 'center', fontSize: '2.5rem' }} padding={'10rem 0 5rem'}>
-          <h5>Today's market emotion</h5>
+          <Typography
+            variant="h4"
+            style={{ color: emotionScore > 80 ? '#52b202' : emotionScore > 50 ? '#F6EEC9' : '#EE4E4E' }}
+            gutterBottom
+          >
+            Today's market emotion
+          </Typography>
           <Gauge
             value={emotionScore}
             startAngle={-110}
