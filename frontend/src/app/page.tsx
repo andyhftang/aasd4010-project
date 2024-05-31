@@ -1,15 +1,25 @@
 'use client'
 
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, use, useEffect, useState } from 'react'
+import React from 'react'
+
+import Link from 'next/link'
 
 import News from '@/model/News'
 import SentimentNeutralIcon from '@mui/icons-material/SentimentNeutral'
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied'
 import SentimentVerySatisfiedIcon from '@mui/icons-material/SentimentVerySatisfied'
+import ThumbDownIcon from '@mui/icons-material/ThumbDown'
+import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import {
   Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
   CircularProgress,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
@@ -23,17 +33,47 @@ import { format, parseISO } from 'date-fns'
 
 import styles from './page.module.scss'
 
+const stockSymbol = [
+  { name: 'NASDAQ', symbol: '^IXIC' },
+  { name: 'S&P500', symbol: '^GSPC' },
+]
+
 export default function Home() {
   const [news, setNews] = useState<News[]>([])
+  const [marketPrice, setMarketPrice] = useState<{ name: string; price: number }[]>([])
   const [emotionScore, setEmotionScore] = useState(82)
 
   useEffect(() => {
     fetch('/api/news')
       .then((res) => res.json())
       .then(({ news }: { news: News[] }) => {
-        setNews(news)
+        setNews(news.sort((a, b) => new Date(b.published).getTime() - new Date(a.published).getTime()).slice(0, 10))
       })
   }, [])
+
+  useEffect(() => {
+    const prices: { name: string; price: number }[] = []
+    stockSymbol.map(({ name, symbol }) => {
+      fetch(`/api/market/price?symbol=${symbol}`)
+        .then((res) => res.json())
+        .then(({ price }: { price: number }) => {
+          prices.push({ name, price })
+          setMarketPrice(prices)
+        })
+    })
+  }, [])
+
+  useEffect(() => {
+    console.log(marketPrice)
+  }, [marketPrice])
+
+  useEffect(() => {
+    if (!(news?.length > 0)) {
+      setEmotionScore(0)
+    }
+
+    setEmotionScore((news.filter((item) => item.emotion === 'Positive').length / news.length) * 100)
+  }, [news])
 
   return news?.length > 0 ? (
     <Grid container spacing={2} className={styles.main}>
@@ -59,6 +99,21 @@ export default function Home() {
           />
         </Box>
       </Grid>
+      {marketPrice.map(({ name, price }, index) => (
+        <Grid xs={4} key={index}>
+          <Card>
+            <CardContent>
+              <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
+                {name}
+              </Typography>
+              <Typography variant="h5" component="div">
+                {price}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+
       <Grid xs={12}>
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {news?.map(({ title, link, published, emotion }, index) => (
@@ -66,21 +121,21 @@ export default function Home() {
               {index > 0 && <Divider variant="inset" component="li" />}
               <ListItem alignItems="flex-start">
                 <ListItemAvatar>
-                  {emotion == 'positive' ? (
+                  {emotion == 'Positive' ? (
                     <SentimentVerySatisfiedIcon fontSize="large" sx={{ color: '#52b202' }} />
-                  ) : emotion == 'negative' ? (
+                  ) : emotion == 'Negative' ? (
                     <SentimentVeryDissatisfiedIcon fontSize="large" sx={{ color: '#EE4E4E' }} />
                   ) : (
                     <SentimentNeutralIcon fontSize="large" sx={{ color: '#F6EEC9' }} />
                   )}
-
-                  {/* <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" /> */}
                 </ListItemAvatar>
                 <ListItemText
                   primary={
-                    <Typography sx={{ display: 'inline' }} component="span" variant="h5" color="text.primary">
-                      {title}
-                    </Typography>
+                    <Link href={link}>
+                      <Typography sx={{ display: 'inline' }} component="span" variant="h5" color="text.primary">
+                        {title}
+                      </Typography>
+                    </Link>
                   }
                   secondary={
                     <>
@@ -90,6 +145,13 @@ export default function Home() {
                     </>
                   }
                 />
+
+                <IconButton aria-label="thumb-up">
+                  <ThumbUpIcon />
+                </IconButton>
+                <IconButton aria-label="thumb-down">
+                  <ThumbDownIcon />
+                </IconButton>
               </ListItem>
             </Fragment>
           ))}
