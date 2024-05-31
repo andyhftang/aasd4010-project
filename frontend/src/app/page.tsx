@@ -79,7 +79,7 @@ export default function Home() {
     <Grid container spacing={2} className={styles.main}>
       <Grid xs={12}>
         <Box sx={{ width: '100%', textAlign: 'center', fontSize: '2.5rem' }} padding={'10rem 0 5rem'}>
-          <>Is today a good day for buying stocks?</>
+          <h5>Today's market emotion</h5>
           <Gauge
             value={emotionScore}
             startAngle={-110}
@@ -100,7 +100,7 @@ export default function Home() {
         </Box>
       </Grid>
       {marketPrice.map(({ name, price }, index) => (
-        <Grid xs={4} key={index}>
+        <Grid xs={6} key={index}>
           <Card>
             <CardContent>
               <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
