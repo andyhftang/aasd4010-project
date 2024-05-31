@@ -1,4 +1,6 @@
 import logging
+import pickle
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -7,6 +9,7 @@ from zlib import crc32
 
 import feedparser
 import requests
+import tensorflow as tf
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
@@ -50,7 +53,31 @@ def save_to_mongodb(record, conn_str):
         logger.error("Error when inserting record %s due to %s", record, e)
 
 
+def clean_text(text):
+    text = re.sub(r"[^a-zA-Z\s]", "", text)
+    text = text.lower()
+    return text
+
+
+# Function to predict text
+def predict_text(text):
+    cleaned_text = clean_text(text)
+    sequence = tokenizer.texts_to_sequences([cleaned_text])
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(
+        sequence, maxlen=50, padding="post"
+    )
+    prediction = model.predict(padded_sequence)
+    return "Positive" if prediction >= 0.5 else "Negative"
+
+
 if __name__ == "__main__":
+    # Load the trained model
+    model = tf.keras.models.load_model("semantic_analysis_model.h5")
+
+    # Load the Tokenizer
+    with open("tokenizer.pickle", "rb") as handle:
+        tokenizer = pickle.load(handle)
+
     # Get environment variables
     rss_url = getenv("RSS_URL")
     mongodb_conn_str = getenv("MONGODB_CONNECTION_STRING")
@@ -72,7 +99,7 @@ if __name__ == "__main__":
                 "id_hash": crc32(entry.id.encode()),
                 "title": entry.title,
                 "link": entry.link,
-                "emotion": "positive",
+                "emotion": predict_text(entry.title),
                 "published": published_time,
             }
 
